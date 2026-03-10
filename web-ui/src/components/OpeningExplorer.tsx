@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/api";
 import type { ExplorePositionResult, ChessDBMove } from "../types/chess";
 
@@ -18,7 +18,7 @@ const OpeningExplorer: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
 
-  const loadPosition = async (positionFen: string) => {
+  const loadPosition = useCallback(async (positionFen: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -30,12 +30,11 @@ const OpeningExplorer: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadPosition(STARTING_FEN);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadPosition]);
 
   const handleReset = () => {
     setMoveHistory([]);

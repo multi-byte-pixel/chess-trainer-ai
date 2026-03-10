@@ -157,7 +157,7 @@ async def opening_repertoire_vs_chessdb(
     )[:5]
 
     for opening in sorted_openings:
-        win_rate = opening["wins"] / opening["games"] if opening["games"] else 0
+        win_rate = opening["wins"] / opening["games"] if opening["games"] > 0 else 0
         opening["win_rate"] = round(win_rate * 100, 1)
 
     return {
