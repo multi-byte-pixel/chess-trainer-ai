@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional
 from urllib.parse import urlencode
 
@@ -210,7 +210,7 @@ def _parse_game(raw: dict[str, Any], username: str) -> Game:
     played_at: Optional[datetime] = None
     ts = raw.get("createdAt")
     if ts:
-        played_at = datetime.utcfromtimestamp(ts / 1000)
+        played_at = datetime.fromtimestamp(ts / 1000, tz=timezone.utc)
 
     return Game(
         id=raw["id"],
@@ -233,7 +233,7 @@ def _parse_puzzle(raw: dict[str, Any], username: str) -> PuzzleActivity:
     played_at: Optional[datetime] = None
     ts = raw.get("date")
     if ts:
-        played_at = datetime.utcfromtimestamp(ts / 1000)
+        played_at = datetime.fromtimestamp(ts / 1000, tz=timezone.utc)
 
     return PuzzleActivity(
         puzzle_id=puzzle.get("id", raw.get("id", "")),
