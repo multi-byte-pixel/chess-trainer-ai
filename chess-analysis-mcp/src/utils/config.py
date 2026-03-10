@@ -23,6 +23,19 @@ class Settings(BaseSettings):
     cloud_eval_cache_ttl: int = Field(default=86400, description="Cloud eval cache TTL in seconds")
     games_cache_ttl: int = Field(default=3600, description="Games cache TTL in seconds")
 
+    # ChessDB settings
+    chessdb_api_url: str = Field(default="https://chessdb.cn", description="ChessDB API base URL")
+    chessdb_request_timeout: float = Field(default=30.0, description="ChessDB request timeout in seconds")
+    chessdb_cache_ttl: int = Field(default=86400, description="ChessDB eval cache TTL in seconds")
+
+    # Tablebase settings
+    tablebase_api_url: str = Field(
+        default="https://tablebase.lichess.ovh",
+        description="Lichess Tablebase API base URL",
+    )
+    tablebase_request_timeout: float = Field(default=15.0, description="Tablebase request timeout in seconds")
+    tablebase_cache_ttl: int = Field(default=604800, description="Tablebase cache TTL in seconds (1 week)")
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 

@@ -108,6 +108,51 @@ class BlunderInfo:
 
 
 @dataclass
+class ChessDBMove:
+    """A single move entry from the ChessDB queryall response."""
+
+    uci: str
+    san: str
+    score: Optional[int]
+    rank: Optional[int]
+    note: str = ""
+    winrate: Optional[float] = None
+
+
+@dataclass
+class ChessDBResult:
+    """Full result from a ChessDB query."""
+
+    fen: str
+    status: str
+    moves: list[ChessDBMove] = field(default_factory=list)
+
+
+@dataclass
+class TablebaseResult:
+    """Result from a Lichess Tablebase probe."""
+
+    fen: str
+    category: str  # win, loss, draw, cursed-win, blessed-loss
+    dtz: Optional[int] = None  # Distance to Zeroing
+    dtm: Optional[int] = None  # Distance to Mate
+    checkmate: bool = False
+    stalemate: bool = False
+
+
+@dataclass
+class GeneratedPuzzle:
+    """A puzzle generated from game analysis."""
+
+    fen: str
+    solution_uci: list[str]  # sequence of UCI moves
+    themes: list[str] = field(default_factory=list)
+    difficulty: str = "unknown"  # easy, medium, hard
+    source_game_id: Optional[str] = None
+    cp_loss_trigger: Optional[int] = None  # cp loss that triggered the puzzle
+
+
+@dataclass
 class PerformanceSnapshot:
     """Aggregated performance data for a user over a period."""
 
