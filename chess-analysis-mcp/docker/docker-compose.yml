@@ -14,6 +14,12 @@ services:
       REDIS_URL: redis://redis:6379/0
       MCP_PORT: 9000
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      CHESSDB_API_URL: ${CHESSDB_API_URL:-https://chessdb.cn}
+      CHESSDB_REQUEST_TIMEOUT: ${CHESSDB_REQUEST_TIMEOUT:-30}
+      CHESSDB_CACHE_TTL: ${CHESSDB_CACHE_TTL:-86400}
+      TABLEBASE_API_URL: ${TABLEBASE_API_URL:-https://tablebase.lichess.ovh}
+      TABLEBASE_REQUEST_TIMEOUT: ${TABLEBASE_REQUEST_TIMEOUT:-15}
+      TABLEBASE_CACHE_TTL: ${TABLEBASE_CACHE_TTL:-604800}
     depends_on:
       postgres:
         condition: service_healthy

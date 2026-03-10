@@ -31,8 +31,10 @@ from mcp.types import (
 )
 
 from chess_engine.stockfish_wrapper import StockfishEngine
+from data.chessdb_client import ChessDBClient
 from data.lichess_client import LichessClient
 from data.storage import RedisCache
+from data.tablebase_client import TablebaseClient
 from mcp_server.prompts.analysis_prompts import (
     analyze_recent_games_prompt,
     opening_repertoire_audit_prompt,
@@ -50,8 +52,23 @@ from mcp_server.tools.analysis_tools import (
     compare_to_engine,
     fetch_cloud_eval,
 )
+from mcp_server.tools.annotation_tools import annotate_game_three_sources
+from mcp_server.tools.comparison_tools import compare_move_rankings, compare_three_sources
+from mcp_server.tools.endgame_tools import endgame_analysis, probe_tablebase, probe_tablebase_mainline
+from mcp_server.tools.explorer_tools import (
+    explore_best_move,
+    explore_position,
+    explore_principal_variation,
+    queue_position_analysis,
+)
 from mcp_server.tools.game_tools import fetch_lichess_games, fetch_puzzle_activity
+from mcp_server.tools.opening_tools import (
+    opening_explorer,
+    opening_line_analysis,
+    opening_repertoire_vs_chessdb,
+)
 from mcp_server.tools.pattern_tools import detect_tactical_patterns
+from mcp_server.tools.puzzle_tools import generate_puzzles_from_game, generate_puzzles_from_user_games
 from mcp_server.tools.stats_tools import (
     aggregate_puzzle_statistics,
     analyze_opening_repertoire,
@@ -277,6 +294,217 @@ _TOOLS: list[Tool] = [
             "required": ["pgn"],
         },
     ),
+    # ---------------------------------------------------------------
+    # ChessDB Position Explorer tools
+    # ---------------------------------------------------------------
+    Tool(
+        name="explore_position",
+        description="Explore a position using ChessDB – returns all scored candidate moves.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "fen": {"type": "string", "description": "FEN string of the position"},
+            },
+            "required": ["fen"],
+        },
+    ),
+    Tool(
+        name="explore_best_move",
+        description="Get the single best move for a position from ChessDB.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "fen": {"type": "string"},
+            },
+            "required": ["fen"],
+        },
+    ),
+    Tool(
+        name="explore_principal_variation",
+        description="Get the principal variation (PV) from a position from ChessDB.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "fen": {"type": "string"},
+            },
+            "required": ["fen"],
+        },
+    ),
+    Tool(
+        name="queue_position_analysis",
+        description="Queue a position for server-side analysis on ChessDB.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "fen": {"type": "string"},
+            },
+            "required": ["fen"],
+        },
+    ),
+    # ---------------------------------------------------------------
+    # Three-source comparison tools
+    # ---------------------------------------------------------------
+    Tool(
+        name="compare_three_sources",
+        description="Compare evaluations from Stockfish, Lichess Cloud, and ChessDB.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "fen": {"type": "string"},
+                "local_depth": {"type": "integer", "default": 20},
+                "multi_pv": {"type": "integer", "default": 3},
+            },
+            "required": ["fen"],
+        },
+    ),
+    Tool(
+        name="compare_move_rankings",
+        description="Compare how Stockfish, Lichess Cloud, and ChessDB rank the top moves.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "fen": {"type": "string"},
+                "top_n": {"type": "integer", "default": 5},
+                "local_depth": {"type": "integer", "default": 20},
+            },
+            "required": ["fen"],
+        },
+    ),
+    # ---------------------------------------------------------------
+    # Opening preparation tools
+    # ---------------------------------------------------------------
+    Tool(
+        name="opening_explorer",
+        description="Explore opening moves from a position using ChessDB.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "fen": {"type": "string", "description": "FEN (defaults to starting position)"},
+            },
+            "required": [],
+        },
+    ),
+    Tool(
+        name="opening_line_analysis",
+        description="Analyse a specific opening line using ChessDB evaluations.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "moves": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "UCI moves list",
+                },
+                "pgn": {"type": "string", "description": "PGN string (alternative to moves)"},
+            },
+            "required": [],
+        },
+    ),
+    Tool(
+        name="opening_repertoire_vs_chessdb",
+        description="Compare a user's opening repertoire against ChessDB recommendations.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "username": {"type": "string"},
+                "max_games": {"type": "integer", "default": 50},
+                "color": {"type": "string", "enum": ["white", "black"]},
+            },
+            "required": ["username"],
+        },
+    ),
+    # ---------------------------------------------------------------
+    # Game annotation (three-source) tools
+    # ---------------------------------------------------------------
+    Tool(
+        name="annotate_game_three_sources",
+        description="Annotate a game with evaluations from Stockfish, Lichess Cloud, and ChessDB.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "pgn": {"type": "string"},
+                "max_positions": {"type": "integer", "default": 20},
+                "local_depth": {"type": "integer", "default": 18},
+                "multi_pv": {"type": "integer", "default": 1},
+                "sample_strategy": {
+                    "type": "string",
+                    "enum": ["every_move", "critical_only"],
+                    "default": "every_move",
+                },
+            },
+            "required": ["pgn"],
+        },
+    ),
+    # ---------------------------------------------------------------
+    # Puzzle generation tools
+    # ---------------------------------------------------------------
+    Tool(
+        name="generate_puzzles_from_game",
+        description="Generate training puzzles from a PGN game by finding mistakes.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "pgn": {"type": "string"},
+                "depth": {"type": "integer", "default": 20},
+                "min_cp_loss": {"type": "integer", "default": 150},
+                "max_puzzles": {"type": "integer", "default": 10},
+                "game_id": {"type": "string"},
+            },
+            "required": ["pgn"],
+        },
+    ),
+    Tool(
+        name="generate_puzzles_from_user_games",
+        description="Generate puzzles from a user's recent games.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "username": {"type": "string"},
+                "max_games": {"type": "integer", "default": 5},
+                "depth": {"type": "integer", "default": 18},
+                "min_cp_loss": {"type": "integer", "default": 150},
+                "max_puzzles_per_game": {"type": "integer", "default": 3},
+            },
+            "required": ["username"],
+        },
+    ),
+    # ---------------------------------------------------------------
+    # Endgame tablebase tools
+    # ---------------------------------------------------------------
+    Tool(
+        name="probe_tablebase",
+        description="Probe the Syzygy endgame tablebase for a position (up to 7 pieces).",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "fen": {"type": "string"},
+            },
+            "required": ["fen"],
+        },
+    ),
+    Tool(
+        name="probe_tablebase_mainline",
+        description="Get the optimal play sequence from a tablebase position.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "fen": {"type": "string"},
+            },
+            "required": ["fen"],
+        },
+    ),
+    Tool(
+        name="endgame_analysis",
+        description="Combined endgame analysis using Stockfish and Syzygy tablebases.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "fen": {"type": "string"},
+                "depth": {"type": "integer", "default": 25},
+            },
+            "required": ["fen"],
+        },
+    ),
 ]
 
 # ---------------------------------------------------------------------------
@@ -341,7 +569,13 @@ _PROMPTS: list[Prompt] = [
 # ---------------------------------------------------------------------------
 
 
-def create_server(engine: StockfishEngine, client: LichessClient, cache: RedisCache) -> Server:
+def create_server(
+    engine: StockfishEngine,
+    client: LichessClient,
+    cache: RedisCache,
+    chessdb_client: ChessDBClient | None = None,
+    tablebase_client: TablebaseClient | None = None,
+) -> Server:
     """Create and configure the MCP server."""
     app = Server("chess-analysis-mcp")
 
@@ -351,7 +585,9 @@ def create_server(engine: StockfishEngine, client: LichessClient, cache: RedisCa
 
     @app.call_tool()
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
-        result = await _dispatch_tool(name, arguments, engine, client, cache)
+        result = await _dispatch_tool(
+            name, arguments, engine, client, cache, chessdb_client, tablebase_client
+        )
         return [TextContent(type="text", text=json.dumps(result, default=str))]
 
     @app.list_resources()
@@ -385,6 +621,8 @@ async def _dispatch_tool(
     engine: StockfishEngine,
     client: LichessClient,
     cache: RedisCache,
+    chessdb_client: ChessDBClient | None = None,
+    tablebase_client: TablebaseClient | None = None,
 ) -> Any:
     from chess_engine.position_analyzer import PositionAnalyzer
 
@@ -427,6 +665,68 @@ async def _dispatch_tool(
             return await compare_position_vs_cloud(args, engine, client, cache)
         case "annotate_game_with_cloud_eval":
             return await annotate_game_with_cloud_eval(args, engine, client, cache)
+        # ChessDB Position Explorer
+        case "explore_position":
+            if not chessdb_client:
+                return {"error": "ChessDB client not configured"}
+            return await explore_position(args, chessdb_client, cache)
+        case "explore_best_move":
+            if not chessdb_client:
+                return {"error": "ChessDB client not configured"}
+            return await explore_best_move(args, chessdb_client, cache)
+        case "explore_principal_variation":
+            if not chessdb_client:
+                return {"error": "ChessDB client not configured"}
+            return await explore_principal_variation(args, chessdb_client, cache)
+        case "queue_position_analysis":
+            if not chessdb_client:
+                return {"error": "ChessDB client not configured"}
+            return await queue_position_analysis(args, chessdb_client)
+        # Three-source comparison
+        case "compare_three_sources":
+            if not chessdb_client:
+                return {"error": "ChessDB client not configured"}
+            return await compare_three_sources(args, engine, client, chessdb_client, cache)
+        case "compare_move_rankings":
+            if not chessdb_client:
+                return {"error": "ChessDB client not configured"}
+            return await compare_move_rankings(args, engine, client, chessdb_client, cache)
+        # Opening preparation
+        case "opening_explorer":
+            if not chessdb_client:
+                return {"error": "ChessDB client not configured"}
+            return await opening_explorer(args, chessdb_client, cache)
+        case "opening_line_analysis":
+            if not chessdb_client:
+                return {"error": "ChessDB client not configured"}
+            return await opening_line_analysis(args, chessdb_client, cache)
+        case "opening_repertoire_vs_chessdb":
+            if not chessdb_client:
+                return {"error": "ChessDB client not configured"}
+            return await opening_repertoire_vs_chessdb(args, client, chessdb_client, cache)
+        # Game annotation (three-source)
+        case "annotate_game_three_sources":
+            if not chessdb_client:
+                return {"error": "ChessDB client not configured"}
+            return await annotate_game_three_sources(args, engine, client, chessdb_client, cache)
+        # Puzzle generation
+        case "generate_puzzles_from_game":
+            return await generate_puzzles_from_game(args, engine)
+        case "generate_puzzles_from_user_games":
+            return await generate_puzzles_from_user_games(args, engine, client, cache)
+        # Endgame tablebase
+        case "probe_tablebase":
+            if not tablebase_client:
+                return {"error": "Tablebase client not configured"}
+            return await probe_tablebase(args, tablebase_client, cache)
+        case "probe_tablebase_mainline":
+            if not tablebase_client:
+                return {"error": "Tablebase client not configured"}
+            return await probe_tablebase_mainline(args, tablebase_client, cache)
+        case "endgame_analysis":
+            if not tablebase_client:
+                return {"error": "Tablebase client not configured"}
+            return await endgame_analysis(args, engine, tablebase_client, cache)
         case _:
             return {"error": f"Unknown tool: {name}"}
 
@@ -481,12 +781,24 @@ async def _run() -> None:
     engine = StockfishEngine()
     client = LichessClient(token=settings.lichess_token)
     cache = RedisCache(settings.redis_url)
+    chessdb_client = ChessDBClient(
+        base_url=settings.chessdb_api_url,
+        timeout=settings.chessdb_request_timeout,
+    )
+    tablebase_client = TablebaseClient(
+        base_url=settings.tablebase_api_url,
+        timeout=settings.tablebase_request_timeout,
+    )
 
     await engine.start()
     await cache.connect()
 
     try:
-        server = create_server(engine, client, cache)
+        server = create_server(
+            engine, client, cache,
+            chessdb_client=chessdb_client,
+            tablebase_client=tablebase_client,
+        )
         async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
             await server.run(
                 read_stream,
@@ -503,6 +815,8 @@ async def _run() -> None:
     finally:
         await engine.stop()
         await client.close()
+        await chessdb_client.close()
+        await tablebase_client.close()
         await cache.close()
 
 
