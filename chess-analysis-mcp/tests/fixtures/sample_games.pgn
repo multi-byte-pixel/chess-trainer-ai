@@ -1,0 +1,16 @@
+[Event "Casual Game"]
+[Site "lichess.org"]
+[Date "2024.01.15"]
+[White "player1"]
+[Black "player2"]
+[Result "0-1"]
+[WhiteElo "1500"]
+[BlackElo "1480"]
+[ECO "C50"]
+[Opening "Italian Game"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. O-O Nf6 5. d3 O-O 6. c3 d6 7. Bg5 h6 8. Bh4 g5
+9. Bg3 Nh5 10. Nbd2 Nxg3 11. hxg3 Kg7 12. d4 exd4 13. cxd4 Bb6 14. e5 dxe5 15. dxe5 Bg4
+16. Re1 Qf6 17. Nb3 Rad8 18. Qc2 Bxf3 19. gxf3 Qxf3 20. Qg2 Qxg2+ 21. Kxg2 f6
+22. exf6+ Rxf6 23. Nd4 Nxd4 24. Rxe8 Rxe8 25. Rd1 Rf2+ 26. Kg1 Nc2 27. Rd8 Rxd8
+28. Bxd8 Ne1 29. Bb6 Nxf3+ 30. Kh1 Rf1+ 31. Kg2 Nd2 32. Be3 Nxc4 33. Bc5 Rxf2+ 0-1

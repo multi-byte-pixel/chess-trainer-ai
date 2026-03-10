@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "chess-analysis-mcp"
+version = "0.1.0"
+description = "MCP server for chess analysis using Lichess and Stockfish"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.0.0",
+    "python-chess>=1.999",
+    "httpx>=0.27.0",
+    "asyncpg>=0.29.0",
+    "redis[hiredis]>=5.0.0",
+    "structlog>=24.1.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "tenacity>=8.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-mock>=3.12.0",
+    "respx>=0.21.0",
+    "coverage>=7.0.0",
+]
+
+[project.scripts]
+chess-analysis-mcp = "mcp_server.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_server", "src/chess_engine", "src/data", "src/utils"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*"]
