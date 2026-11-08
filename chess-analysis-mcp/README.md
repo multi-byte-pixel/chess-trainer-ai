@@ -4,16 +4,16 @@ A **Model Context Protocol (MCP) server** that lets LLM agents analyse a user's 
 
 ## Features
 
-- **Game analysis** – fetch games, detect blunders, calculate ACPL
-- **Puzzle statistics** – aggregate puzzle activity, identify weak themes
-- **Stockfish integration** – local engine analysis with multi-PV support
-- **Lichess Cloud Eval** – fetch positional evaluations from the Lichess cloud database (cached in Redis)
-- **Compare local vs cloud** – agree/disagree analysis with novelty scoring
-- **Game annotation** – annotate every position (or only critical moments) with local + cloud evals
-- **Opening repertoire** – win-rate analysis by ECO code
-- **Training plans** – personalised suggestions based on recent performance
-- **MCP resources** – expose game/puzzle/report data as URI resources
-- **MCP prompts** – structured prompt templates for common workflows
+- **Game analysis** - fetch games, detect blunders, calculate ACPL
+- **Puzzle statistics** - aggregate puzzle activity, identify weak themes
+- **Stockfish integration** - local engine analysis with multi-PV support
+- **Lichess Cloud Eval** - fetch positional evaluations from the Lichess cloud database (cached in Redis)
+- **Compare local vs cloud** - agree/disagree analysis with novelty scoring
+- **Game annotation** - annotate every position (or only critical moments) with local + cloud evals
+- **Opening repertoire** - win-rate analysis by ECO code
+- **Training plans** - personalised suggestions based on recent performance
+- **MCP resources** - expose game/puzzle/report data as URI resources
+- **MCP prompts** - structured prompt templates for common workflows
 
 ## Tech stack
 
@@ -137,9 +137,9 @@ The MCP server will be available on port `9000`.
 
 ## MCP prompts
 
-- `analyze-recent-games` – full game analysis workflow
-- `puzzle-performance-review` – puzzle performance review
-- `opening-repertoire-audit` – opening repertoire audit
+- `analyze-recent-games` - full game analysis workflow
+- `puzzle-performance-review` - puzzle performance review
+- `opening-repertoire-audit` - opening repertoire audit
 
 ## Running tests
 

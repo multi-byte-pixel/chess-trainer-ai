@@ -1,71 +1,67 @@
 # chess-trainer-ai
 
-A comprehensive chess training platform powered by AI. Combines a **Model Context Protocol (MCP) server** with local Stockfish analysis, Lichess APIs, **ChessDB** crowd-sourced evaluations, **Syzygy endgame tablebases**, and a **React web UI**.
+A chess training toolkit built around a Model Context Protocol (MCP) server. An LLM agent can use it to analyse a Lichess player's games and puzzles with local Stockfish, Lichess cloud evaluations, ChessDB crowd-sourced scores, and Syzygy endgame tablebases.
+
+<!-- YOUR NOTES: why you built this, what you wanted to learn, and how you use it. -->
+
+## Status
+
+| Component | State |
+|---|---|
+| MCP server (`chess-analysis-mcp/`) | Runs over stdio. 44 unit tests pass offline against mocked APIs (`pytest`). |
+| ChessDB, tablebase, three-source comparison, puzzle and opening tools | Implemented and unit-tested against mocked HTTP responses. Not yet checked against live services in CI. |
+| Web UI (`web-ui/`) | Early React prototype. It calls an HTTP API on port 9000, but the server currently speaks stdio only, so an HTTP bridge is still needed. |
+| Docker Compose and ECS deploy script | Provided for local experiments; not exercised in CI. |
+
+<!-- YOUR NOTES: what you verified by hand (for example, which tools you ran against your own Lichess account) and what you would test next. -->
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        React Web UI                             │
-│  Position Explorer · Three-Source Comparison · Opening Explorer  │
-│  Puzzle Trainer · Endgame Explorer                              │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │ HTTP / JSON
-┌──────────────────────────────▼──────────────────────────────────┐
-│                     MCP Server (Python)                          │
-│  Tools · Resources · Prompts · Dispatch                         │
-├─────────┬───────────┬──────────────┬───────────┬───────────────┤
-│Stockfish│ Lichess   │ ChessDB      │ Tablebase │ PostgreSQL    │
-│ (local) │ API       │ (chessdb.cn) │ (Lichess) │ + Redis       │
-└─────────┴───────────┴──────────────┴───────────┴───────────────┘
+React web UI (prototype)  --HTTP (planned bridge)-->  MCP server (Python, stdio)
+                                                        |
+        +-------------+-------------+------------+------+---------------+
+        | Stockfish   | Lichess API | ChessDB    | Lichess tablebase    |
+        | (local)     | + cloud eval| chessdb.cn | tablebase.lichess.ovh|
+        +-------------+-------------+------------+----------------------+
+                         PostgreSQL (storage) + Redis (cache)
 ```
 
 ## Features
 
-### Existing (Lichess + Stockfish)
-- **Game analysis** – fetch games, detect blunders, calculate ACPL
-- **Puzzle statistics** – aggregate puzzle activity, identify weak themes
-- **Stockfish integration** – local engine analysis with multi-PV support
-- **Lichess Cloud Eval** – fetch positional evaluations (cached in Redis)
-- **Compare local vs cloud** – agree/disagree analysis with novelty scoring
-- **Game annotation** – annotate positions with local + cloud evals
-- **Opening repertoire** – win-rate analysis by ECO code
-- **Training plans** – personalised suggestions based on recent performance
+- Game analysis: fetch games, detect blunders, calculate average centipawn loss
+- Puzzle statistics: aggregate puzzle activity and identify weak themes
+- Local Stockfish analysis with multi-PV, compared against Lichess cloud evaluations
+- Three-source comparison: Stockfish vs. Lichess cloud vs. ChessDB, including move-ranking agreement
+- Game annotation with all three evaluation sources
+- Opening explorer and repertoire comparison against ChessDB
+- Puzzle generation from a PGN or a user's recent games
+- Endgame tablebase probing (up to 7 pieces) combined with Stockfish analysis
+- Personalised training plans based on recent performance
 
-### New Features (this branch)
-
-| Feature | Branch | Status |
-|---------|--------|--------|
-| **ChessDB Client** | `feature/chessdb-client` | ✅ Scaffolded |
-| **Position Explorer** | `feature/position-explorer` | ✅ Scaffolded |
-| **Three-Source Comparison** | `feature/three-source-comparison` | ✅ Scaffolded |
-| **Opening Prep** | `feature/opening-prep` | ✅ Scaffolded |
-| **Game Annotation (ChessDB)** | `feature/game-annotation-chessdb` | ✅ Scaffolded |
-| **Puzzle Generation** | `feature/puzzle-generation` | ✅ Scaffolded |
-| **Endgame Tablebase Bridge** | `feature/endgame-tablebase-bridge` | ✅ Scaffolded |
-| **Web UI (React)** | `feature/web-ui-chessdb` | ✅ Scaffolded |
-
-## New MCP Tools
+## MCP tools
 
 | Tool | Description |
 |------|-------------|
 | `explore_position` | Query ChessDB for all scored candidate moves |
 | `explore_best_move` | Get the single best move from ChessDB |
-| `explore_principal_variation` | Get the PV from ChessDB |
+| `explore_principal_variation` | Get the principal variation from ChessDB |
 | `queue_position_analysis` | Request server-side analysis on ChessDB |
-| `compare_three_sources` | Compare Stockfish, Lichess Cloud, and ChessDB evals |
+| `compare_three_sources` | Compare Stockfish, Lichess cloud, and ChessDB evaluations |
 | `compare_move_rankings` | Compare how each source ranks the top N moves |
 | `opening_explorer` | Browse opening moves via ChessDB |
 | `opening_line_analysis` | Analyse a specific opening line with ChessDB |
-| `opening_repertoire_vs_chessdb` | Compare user's repertoire against ChessDB |
-| `annotate_game_three_sources` | Annotate a game with all three eval sources |
+| `opening_repertoire_vs_chessdb` | Compare a user's repertoire against ChessDB |
+| `annotate_game_three_sources` | Annotate a game with all three evaluation sources |
 | `generate_puzzles_from_game` | Generate training puzzles from a PGN game |
 | `generate_puzzles_from_user_games` | Generate puzzles from a user's recent games |
-| `probe_tablebase` | Probe Syzygy endgame tablebase (≤ 7 pieces) |
-| `probe_tablebase_mainline` | Get optimal play sequence from tablebase |
-| `endgame_analysis` | Combined Stockfish + tablebase endgame analysis |
+| `probe_tablebase` | Probe the Syzygy endgame tablebase |
+| `probe_tablebase_mainline` | Get the optimal play sequence from the tablebase |
+| `endgame_analysis` | Combined Stockfish and tablebase endgame analysis |
 
-## Tech Stack
+The original Lichess and Stockfish tools are documented in [chess-analysis-mcp/README.md](chess-analysis-mcp/README.md).
+
+## Tech stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -80,7 +76,7 @@ A comprehensive chess training platform powered by AI. Combines a **Model Contex
 | Logging | `structlog` |
 | Config | `pydantic-settings` |
 
-## Quick Start
+## Quick start
 
 ### Backend (MCP Server)
 
@@ -96,7 +92,7 @@ pip install -e ".[dev]"
 python -m mcp_server.server
 ```
 
-### Frontend (React Web UI)
+### Frontend (React web UI prototype)
 
 ```bash
 cd web-ui
@@ -112,28 +108,28 @@ cd chess-analysis-mcp/docker
 docker compose up --build
 ```
 
-## ChessDB Network Allowlisting
+## ChessDB network allowlisting
 
 ChessDB is hosted at `chessdb.cn`. If your environment blocks outbound traffic, allowlist:
 
 - **Domain:** `chessdb.cn`
 - **Port:** `443` (HTTPS)
 
-### AWS-specific Configuration
+### AWS configuration
 
-1. **Security Group** – add outbound rule for HTTPS (TCP 443)
-2. **NACL** – ensure subnet allows outbound 443 and ephemeral return (1024-65535)
-3. **NAT Gateway** – if ECS tasks run in a private subnet, route through NAT Gateway
-4. **Route Tables** – ensure internet gateway route exists for public subnets
+1. **Security Group** - add outbound rule for HTTPS (TCP 443)
+2. **NACL** - ensure subnet allows outbound 443 and ephemeral return (1024-65535)
+3. **NAT Gateway** - if ECS tasks run in a private subnet, route through NAT Gateway
+4. **Route Tables** - ensure internet gateway route exists for public subnets
 
 ### GitHub Actions CI
 
 ```yaml
 - name: Verify ChessDB connectivity
-  run: curl -sf https://chessdb.cn/cdb_api_health || echo "ChessDB unreachable – skipping integration tests"
+  run: curl -sf https://chessdb.cn/cdb_api_health || echo "ChessDB unreachable - skipping integration tests"
 ```
 
-## Environment Variables
+## Environment variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -149,9 +145,9 @@ ChessDB is hosted at `chessdb.cn`. If your environment blocks outbound traffic, 
 | `TABLEBASE_API_URL` | `https://tablebase.lichess.ovh` | Tablebase API base URL |
 | `TABLEBASE_REQUEST_TIMEOUT` | `15` | Tablebase request timeout (seconds) |
 | `TABLEBASE_CACHE_TTL` | `604800` | Tablebase cache TTL (seconds, 1 week) |
-| `REACT_APP_API_URL` | `http://localhost:9000` | Web UI → MCP API endpoint |
+| `REACT_APP_API_URL` | `http://localhost:9000` | Web UI API endpoint |
 
-## Project Structure
+## Project structure
 
 ```
 chess-trainer-ai/
@@ -165,38 +161,38 @@ chess-trainer-ai/
 │   │   │       ├── pattern_tools.py
 │   │   │       ├── stats_tools.py
 │   │   │       ├── training_tools.py
-│   │   │       ├── explorer_tools.py      # NEW – ChessDB position explorer
-│   │   │       ├── comparison_tools.py    # NEW – three-source comparison
-│   │   │       ├── opening_tools.py       # NEW – opening preparation
-│   │   │       ├── annotation_tools.py    # NEW – three-source annotation
-│   │   │       ├── puzzle_tools.py        # NEW – puzzle generation
-│   │   │       └── endgame_tools.py       # NEW – tablebase bridge
+│   │   │       ├── explorer_tools.py
+│   │   │       ├── comparison_tools.py
+│   │   │       ├── opening_tools.py
+│   │   │       ├── annotation_tools.py
+│   │   │       ├── puzzle_tools.py
+│   │   │       └── endgame_tools.py
 │   │   ├── chess_engine/
 │   │   │   ├── stockfish_wrapper.py
 │   │   │   ├── position_analyzer.py
 │   │   │   └── pattern_detector.py
 │   │   ├── data/
 │   │   │   ├── lichess_client.py
-│   │   │   ├── chessdb_client.py          # NEW – ChessDB API client
-│   │   │   ├── tablebase_client.py        # NEW – Tablebase API client
+│   │   │   ├── chessdb_client.py
+│   │   │   ├── tablebase_client.py
 │   │   │   ├── storage.py
-│   │   │   └── models.py                  # Updated with new models
+│   │   │   └── models.py
 │   │   └── utils/
-│   │       ├── config.py                  # Updated with new settings
+│   │       ├── config.py
 │   │       ├── logging.py
 │   │       └── metrics.py
 │   ├── tests/
 │   │   ├── test_tools.py
 │   │   ├── test_analysis.py
-│   │   ├── test_chessdb_client.py         # NEW
-│   │   ├── test_tablebase_client.py       # NEW
-│   │   └── test_new_features.py           # NEW
+│   │   ├── test_chessdb_client.py
+│   │   ├── test_tablebase_client.py
+│   │   └── test_new_features.py
 │   ├── docker/
 │   │   ├── Dockerfile
-│   │   └── docker-compose.yml             # Updated with new env vars
+│   │   └── docker-compose.yml
 │   ├── pyproject.toml
-│   └── .env.example                       # Updated with new variables
-├── web-ui/                                # NEW – React frontend
+│   └── .env.example
+├── web-ui/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── PositionExplorer.tsx
@@ -210,24 +206,26 @@ chess-trainer-ai/
 │   │   └── index.tsx
 │   ├── package.json
 │   └── tsconfig.json
-└── README.md                              # This file
+└── README.md
 ```
 
-## Running Tests
+## Running tests
 
 ```bash
 cd chess-analysis-mcp
 python -m pytest tests/ -v
 ```
 
-## Future Work (AWS Migration)
+## Testing approach
 
-The Docker Compose setup is designed for local development. For production:
+<!-- YOUR NOTES: how you tested this (mocked HTTP vs. live calls, which edge cases you cared about, what broke along the way). -->
 
-- **ECS Fargate** – deploy MCP server as a containerised service
-- **ElastiCache** – replace local Redis with AWS ElastiCache (Redis)
-- **RDS PostgreSQL** – replace local PostgreSQL with RDS
-- **CloudFront + S3** – host React web UI as a static site
-- **API Gateway** – front the MCP server with API Gateway for auth/rate limiting
+## How this was built
 
-See `chess-analysis-mcp/infra/scripts/deploy.sh` for the existing ECS deployment script.
+<!-- YOUR NOTES: describe your process honestly, for example: "Built with an AI coding agent. I wrote the specs, reviewed each change, and ran and extended the tests." -->
+
+## Next steps
+
+- HTTP bridge so the web UI can call the MCP tools
+- Live-service smoke tests behind an opt-in flag
+- Deployment on AWS (ECS Fargate, RDS, ElastiCache, S3 and CloudFront); see `chess-analysis-mcp/infra/scripts/deploy.sh`
