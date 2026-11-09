@@ -1,6 +1,8 @@
-# Chess Trainer AI – Web UI
+# Chess Trainer AI web UI
 
-React frontend for the Chess Trainer AI MCP server.
+Prototype React frontend for the Chess Trainer AI MCP server.
+
+The UI expects an HTTP API at `REACT_APP_API_URL`. The MCP server currently runs over stdio, so these pages need an HTTP bridge before they can return live data.
 
 ## Features
 
@@ -69,4 +71,5 @@ web-ui/
 - [ ] Add puzzle solving UI with move validation
 - [ ] Add performance dashboard / charts
 - [ ] Add responsive design / mobile support
+- [ ] Add an HTTP bridge to the MCP server
 - [ ] Add unit tests for components
