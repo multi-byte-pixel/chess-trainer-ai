@@ -2,8 +2,6 @@
 
 A chess training toolkit built around a Model Context Protocol (MCP) server. An LLM agent can use it to analyse a Lichess player's games and puzzles with local Stockfish, Lichess cloud evaluations, ChessDB crowd-sourced scores, and Syzygy endgame tablebases.
 
-<!-- YOUR NOTES: why you built this, what you wanted to learn, and how you use it. -->
-
 ## Status
 
 | Component | State |
@@ -12,8 +10,6 @@ A chess training toolkit built around a Model Context Protocol (MCP) server. An 
 | ChessDB, tablebase, three-source comparison, puzzle and opening tools | Implemented and unit-tested against mocked HTTP responses. Not yet checked against live services in CI. |
 | Web UI (`web-ui/`) | Early React prototype. It calls an HTTP API on port 9000, but the server currently speaks stdio only, so an HTTP bridge is still needed. |
 | Docker Compose and ECS deploy script | Provided for local experiments; not exercised in CI. |
-
-<!-- YOUR NOTES: what you verified by hand (for example, which tools you ran against your own Lichess account) and what you would test next. -->
 
 ## Architecture
 
@@ -216,13 +212,9 @@ cd chess-analysis-mcp
 python -m pytest tests/ -v
 ```
 
-## Testing approach
-
-<!-- YOUR NOTES: how you tested this (mocked HTTP vs. live calls, which edge cases you cared about, what broke along the way). -->
-
 ## How this was built
 
-<!-- YOUR NOTES: describe your process honestly, for example: "Built with an AI coding agent. I wrote the specs, reviewed each change, and ran and extended the tests." -->
+Developed with AI coding assistance. The commit and pull-request history retain that attribution.
 
 ## Next steps
 
