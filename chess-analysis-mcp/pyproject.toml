@@ -33,7 +33,7 @@ dev = [
 chess-analysis-mcp = "mcp_server.server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/mcp_server", "src/chess_engine", "src/data", "src/utils"]
+packages = ["src/mcp_server", "src/chess_engine", "src/data", "src/utils", "src/coach"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
